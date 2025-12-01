@@ -6,34 +6,65 @@
 using namespace std;
 class windowparams;
 struct hanoiDimensions;
-sf::Vector2f blockposition( int blocknum, int column, windowparams &param1 );
+sf::Vector2f blockposition( int blocknum, int column, windowparams &param1, int totBlocks );
+float blockwidthcomputation( int blocknum1, windowparams &param1, int totBlocks );
 struct hanoiDimensions{
-    int blockWidth;
+    int minBlockWidth;
+    int maxBlockWidth;
     int blockHeight;
+};
+struct towerDimensions{
+    int towerBase;
+    int towerLength;
+    int baseWidth;
+    int towerWidth;
 };
 class windowparams{
     public:
     int windowWidth, windowHeight;
     int hanoiDistance;
-    int towerLength;
-    int towerBase;
+    towerDimensions towDimensions;
+    //int towerLength;
+    //int towerBase;
+    //int baseWidth;
     hanoiDimensions blockdimensions;
     void computeDimensions( sf::RenderWindow &window1, int totBlocks ){
         windowWidth = window1.getSize().x;
         windowHeight = window1.getSize().y;
-        towerLength = static_cast<int>( windowHeight / 1.9 );
-        towerBase = 0.8 * windowHeight;
-        blockdimensions.blockWidth = hanoiDistance * 0.6;
-        blockdimensions.blockHeight = towerLength / totBlocks;
+        towDimensions.towerLength = static_cast<int>( windowHeight / 1.9 );
+        towDimensions.towerBase = 0.8 * windowHeight;
+        blockdimensions.maxBlockWidth = hanoiDistance * 0.6;
+        blockdimensions.minBlockWidth = 30;
+        blockdimensions.blockHeight = 20;
     };
 };
 
 class hanoiTowers{
     sf::RectangleShape tower;
+    sf::RectangleShape base;
     vector<int> blockTrack;
     public:
+    hanoiTowers( int towerNum, windowparams& param11 ){
+        base.setSize( { param11.hanoiDistance * 0.9, param11.towDimensions.baseWidth } );
+        base.setPosition( { param11.hanoiDistance * towerNum - base.getSize().x / 2, param11.towDimensions.towerBase } );
+        tower.setSize( { param11.towDimensions.towerWidth, param11.towDimensions.towerLength } );
+        tower.setPosition( { param11.hanoiDistance * towerNum - ( param11.towDimensions.towerWidth / 2 ), ( param11.towDimensions.towerBase - param11.towDimensions.towerLength ) } );
+        tower.setFillColor( sf::Color( 150, 75, 0 ) );
+        base.setFillColor( sf::Color( 150, 75, 0 ) );
+    }
+    hanoiTowers( const hanoiTowers& tower1 ){
+        base.setSize( tower1.base.getSize() );
+        base.setPosition( tower1.base.getPosition() );
+        base.setFillColor( tower1.base.getFillColor() );
+        tower.setSize( tower1.tower.getSize() );
+        tower.setPosition( tower1.tower.getPosition() );
+        tower.setFillColor( tower1.tower.getFillColor() );
+    }
     sf::RectangleShape& getTower(){
         return tower;
+    }
+    sf::RectangleShape& getBase(){
+        return base;
     }
     vector<int>& getTrack(){
         return blockTrack;
@@ -56,12 +87,12 @@ class hanoiblock{
             block.setSize( block1.block.getSize() );
 
         }
-        hanoiblock( int blocknum1, int totBlocks, windowparams &param11, int column1 = 0, sf::Vector2i position1 = { 0, 0 } ) : blocknum(blocknum1), column(column1), param1(param11){
-            block.setPosition( blockposition( ( totBlocks - blocknum ), column, param11 ) );
-            block.setSize({ param11.blockdimensions.blockWidth, param11.blockdimensions.blockHeight });
+        hanoiblock( int blocknum1, int totBlocks, windowparams &param11, int column1 = 1, sf::Vector2i position1 = { 0, 0 } ) : blocknum(blocknum1), column(column1), param1(param11){
+            block.setPosition( blockposition( ( totBlocks - blocknum ), column, param11, totBlocks ) );
+            block.setSize({ blockwidthcomputation( blocknum, param11, totBlocks ), param11.blockdimensions.blockHeight });
         }
-        void setPosition( int blocknum, int column, windowparams &param1 ){
-            block.setPosition( blockposition( blocknum, column, param1 ) );
+        void setPosition( int blocknum, int column, windowparams &param1, int totBlocks ){
+            block.setPosition( blockposition( blocknum, column, param1, totBlocks ) );
             this->column = column;
         }
         sf::RectangleShape& getBlock(){
@@ -77,7 +108,9 @@ int main(){
     param1.windowWidth = 800;
     param1.windowHeight = 600;
     param1.hanoiDistance = param1.windowWidth / 4;
-    param1.towerLength = static_cast<int>( param1.windowHeight / 1.9 );
+    param1.towDimensions.towerLength = static_cast<int>( param1.windowHeight / 1.9 );
+    param1.towDimensions.towerWidth = 3;
+    param1.towDimensions.baseWidth = 3;
     sf::RenderWindow window1( sf::VideoMode({ param1.windowWidth, param1.windowHeight }), "Hanoi" );
     sf::View view1;
     view1.setSize( { param1.windowWidth, param1.windowHeight } );
@@ -87,10 +120,15 @@ int main(){
     srand(time(0));
     vector<hanoiTowers> towers;
     vector<hanoiblock> blocks;
-    towers.resize(3);
+    //towers.resize(3);
     cout<<"Enter the number of hanoi blocks";
     cin>>totBlocks;
     param1.computeDimensions( window1, totBlocks );
+    for( int i = 0; i < 3; i++ ){
+        towers.push_back( hanoiTowers( ( i + 1 ), param1 ) );
+        window1.draw( towers[i].getBase() );
+        window1.draw( towers[i].getTower() );
+    }
     for( int i = 0; i < totBlocks; i++ ){
         int random1 = rand() % 256;
         int random2 = rand() % 256;
@@ -115,8 +153,13 @@ int main(){
     }
     
 }
-sf::Vector2f blockposition( int blocknum, int column, windowparams &param1 ){
-    sf::Vector2f temp( static_cast<float>(column * param1.hanoiDistance), static_cast<float>( param1.towerBase - ( blocknum - 1 ) * param1.blockdimensions.blockHeight ) );
+sf::Vector2f blockposition( int blocknum, int column, windowparams &param1, int totBlocks ){
+    sf::Vector2f temp( static_cast<float>(column * param1.hanoiDistance - ( blockwidthcomputation( ( totBlocks - blocknum ), param1, totBlocks ) / 2 ) ), static_cast<float>( param1.towDimensions.towerBase - ( blocknum ) * param1.blockdimensions.blockHeight ) );
     return temp;
 
+}
+float blockwidthcomputation( int blocknum1, windowparams &param1, int totBlocks ){
+    float blockwidth = ( param1.blockdimensions.maxBlockWidth - param1.blockdimensions.minBlockWidth ) / ( totBlocks - 1 ) * ( blocknum1 ) + param1.blockdimensions.minBlockWidth;
+    //cout<<"\n\n"<<blocknum1<<endl;
+    return blockwidth;
 }
