@@ -1,5 +1,6 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
+#include <ctime>
 #include <unordered_map>
 #include <vector>
 #include <cstdlib>
@@ -42,6 +43,7 @@ class windowparams{
 class hanoiTowers{
     sf::RectangleShape tower;
     sf::RectangleShape base;
+    sf::RectangleShape towersprite;
     vector<int> blockTrack;
     public:
     hanoiTowers( int towerNum, windowparams& param11 ){
@@ -49,6 +51,9 @@ class hanoiTowers{
         base.setPosition( { param11.hanoiDistance * towerNum - base.getSize().x / 2, param11.towDimensions.towerBase } );
         tower.setSize( { param11.towDimensions.towerWidth, param11.towDimensions.towerLength } );
         tower.setPosition( { param11.hanoiDistance * towerNum - ( param11.towDimensions.towerWidth / 2 ), ( param11.towDimensions.towerBase - param11.towDimensions.towerLength ) } );
+        towersprite.setSize( { param11.hanoiDistance * 0.9, param11.towDimensions.towerLength } );
+        towersprite.setPosition( { param11.hanoiDistance * towerNum - towersprite.getSize().x / 2, ( param11.towDimensions.towerBase - towersprite.getSize().y ) } );
+        towersprite.setFillColor( sf::Color( 0, 0, 0, 0 ) );
         tower.setFillColor( sf::Color( 150, 75, 0 ) );
         base.setFillColor( sf::Color( 150, 75, 0 ) );
     }
@@ -59,12 +64,18 @@ class hanoiTowers{
         tower.setSize( tower1.tower.getSize() );
         tower.setPosition( tower1.tower.getPosition() );
         tower.setFillColor( tower1.tower.getFillColor() );
+        towersprite.setSize( tower1.towersprite.getSize() );
+        towersprite.setPosition( tower1.towersprite.getPosition() );
+        towersprite.setOutlineColor( tower1.towersprite.getOutlineColor() );
     }
     sf::RectangleShape& getTower(){
         return tower;
     }
     sf::RectangleShape& getBase(){
         return base;
+    }
+    sf::RectangleShape& getTowerSprite(){
+        return towersprite;
     }
     vector<int>& getTrack(){
         return blockTrack;
@@ -103,6 +114,9 @@ class hanoiblock{
 
 int main(){
     //int windowWidth, windowHeight;
+    sf::Clock dtclock;
+    float dt = 0.f;
+    //srand(time(0));
     int totBlocks;
     windowparams param1;
     param1.windowWidth = 800;
@@ -118,6 +132,8 @@ int main(){
     window1.setFramerateLimit(1);
     window1.setView( view1 );
     srand(time(0));
+    bool buttonpressed = false;
+    bool mousehold = false;
     vector<hanoiTowers> towers;
     vector<hanoiblock> blocks;
     //towers.resize(3);
@@ -128,6 +144,7 @@ int main(){
         towers.push_back( hanoiTowers( ( i + 1 ), param1 ) );
         window1.draw( towers[i].getBase() );
         window1.draw( towers[i].getTower() );
+        window1.draw( towers[i].getTowerSprite() );
     }
     for( int i = 0; i < totBlocks; i++ ){
         int random1 = rand() % 256;
@@ -148,6 +165,24 @@ int main(){
             if( event -> is<sf::Event::Closed>() ){
                 window1.close();
             }
+            if( event -> is<sf::Event::MouseButtonReleased>() ){
+                buttonpressed = false;
+                dtclock.reset();
+                mousehold = false;
+            }
+        }
+        if( sf::Mouse::isButtonPressed( sf::Mouse::Button::Left ) ){
+            if( buttonpressed = false ){
+                buttonpressed = true;
+                dtclock.restart().asMilliseconds();
+            }
+            else if( mousehold == true ){
+                checkhanoihover();
+            }
+            else if( buttonpressed = true && dtclock.getElapsedTime().asMilliseconds() > 500 && ( mousehold == false ) ){
+                mousehold = true;
+            }
+
         }
         window1.display();
     }
