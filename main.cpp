@@ -7,8 +7,10 @@
 using namespace std;
 class windowparams;
 struct hanoiDimensions;
+class hanoiblock;
 sf::Vector2f blockposition( int blocknum, int column, windowparams &param1, int totBlocks );
 float blockwidthcomputation( int blocknum1, windowparams &param1, int totBlocks );
+//bool checkhanoihover(std::vector<hanoiTowers>);
 struct hanoiDimensions{
     int minBlockWidth;
     int maxBlockWidth;
@@ -45,6 +47,7 @@ class hanoiTowers{
     sf::RectangleShape base;
     sf::RectangleShape towersprite;
     vector<int> blockTrack;
+    vector<hanoiblock> blocks;
     public:
     hanoiTowers( int towerNum, windowparams& param11 ){
         base.setSize( { param11.hanoiDistance * 0.9, param11.towDimensions.baseWidth } );
@@ -79,6 +82,12 @@ class hanoiTowers{
     }
     vector<int>& getTrack(){
         return blockTrack;
+    }
+    vector<hanoiblock>& getBlocks(){
+        return blocks;
+    }
+    hanoiblock& getHanoiBlock( int blocknum ){
+        return blocks[blocknum];
     }
 };
 
@@ -135,7 +144,7 @@ int main(){
     bool buttonpressed = false;
     bool mousehold = false;
     vector<hanoiTowers> towers;
-    vector<hanoiblock> blocks;
+    //vector<hanoiblock> blocks;
     //towers.resize(3);
     cout<<"Enter the number of hanoi blocks";
     cin>>totBlocks;
@@ -155,9 +164,10 @@ int main(){
         //    random = rand() % 255;
         //}
         towers[0].getTrack().push_back(i);
-        blocks.push_back(hanoiblock(i, totBlocks, param1));
-        blocks[i].getBlock().setFillColor( sf::Color( random1, random2, random3 ) );
-        window1.draw(blocks[i].getBlock());
+        towers[0].getBlocks().push_back(hanoiblock(i, totBlocks, param1));
+        cout<<"Test Point";
+        towers[0].getHanoiBlock(i).getBlock().setFillColor( sf::Color( random1, random2, random3 ) );
+        window1.draw(towers[0].getHanoiBlock(i).getBlock());
     }
     //window1.draw(blocks[1].getBlock());
     while(window1.isOpen()){
@@ -177,7 +187,7 @@ int main(){
                 dtclock.restart().asMilliseconds();
             }
             else if( mousehold == true ){
-                checkhanoihover();
+                //checkhanoihover( towers );
             }
             else if( buttonpressed = true && dtclock.getElapsedTime().asMilliseconds() > 500 && ( mousehold == false ) ){
                 mousehold = true;
@@ -198,3 +208,8 @@ float blockwidthcomputation( int blocknum1, windowparams &param1, int totBlocks 
     //cout<<"\n\n"<<blocknum1<<endl;
     return blockwidth;
 }
+//bool checkhanoihover( std::vector<hanoiTowers> towers ){
+//    for( auto &tower : towers ){
+//        //if( tower.)
+//    }
+//}
