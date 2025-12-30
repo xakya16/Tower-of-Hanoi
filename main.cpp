@@ -7,9 +7,12 @@
 using namespace std;
 class windowparams;
 struct hanoiDimensions;
+class hanoiTowers;
 class hanoiblock;
 sf::Vector2f blockposition( int blocknum, int column, windowparams &param1, int totBlocks );
 float blockwidthcomputation( int blocknum1, windowparams &param1, int totBlocks );
+hanoiblock* checkhanoihover( std::vector<hanoiTowers>& towers, sf::RenderWindow &window1 );
+bool checkhover( sf::RectangleShape block, sf::Vector2f point );
 //bool checkhanoihover(std::vector<hanoiTowers>);
 struct hanoiDimensions{
     int minBlockWidth;
@@ -138,11 +141,17 @@ int main(){
     sf::View view1;
     view1.setSize( { param1.windowWidth, param1.windowHeight } );
     view1.setCenter( { param1.windowWidth / 2, param1.windowHeight / 2 } );
-    window1.setFramerateLimit(1);
+    window1.setFramerateLimit(10);
     window1.setView( view1 );
     srand(time(0));
+    sf::Font font1;
+    if( font1.openFromFile("C:\\Users\\Hp\\Desktop\\proj\\calibri.ttf") ){}
+    sf::Text coordinates(font1);
+    coordinates.setPosition({ 5.f, 5.f });
+    coordinates.setString("");
     bool buttonpressed = false;
     bool mousehold = false;
+    hanoiblock* dragblock = nullptr;
     vector<hanoiTowers> towers;
     //vector<hanoiblock> blocks;
     //towers.resize(3);
@@ -171,6 +180,16 @@ int main(){
     }
     //window1.draw(blocks[1].getBlock());
     while(window1.isOpen()){
+        window1.clear();
+        window1.setView( view1 );
+        for( int i = 0; i < 3; i++ ){
+            window1.draw( towers[i].getTower() );
+            window1.draw( towers[i].getBase() );
+            for( auto &block1 : towers[i].getBlocks() ){
+                window1.draw( block1.getBlock() );
+            }
+        }
+        window1.display();
         while( const std::optional event = window1.pollEvent() ){
             if( event -> is<sf::Event::Closed>() ){
                 window1.close();
@@ -179,22 +198,32 @@ int main(){
                 buttonpressed = false;
                 dtclock.reset();
                 mousehold = false;
+                cout<<"Released";
             }
         }
         if( sf::Mouse::isButtonPressed( sf::Mouse::Button::Left ) ){
-            if( buttonpressed = false ){
+            //sf::Mouse::setPosition( { 0, 0 } );
+            if( buttonpressed == false ){
                 buttonpressed = true;
                 dtclock.restart().asMilliseconds();
+                cout<<"Cycle executed";
             }
             else if( mousehold == true ){
-                //checkhanoihover( towers );
+                //dragblock = checkhanoihover( towers );
+                if( dragblock != nullptr ){
+                    dragblock->getBlock().setPosition( { static_cast<float>( window1.mapPixelToCoords( sf::Mouse::getPosition( window1 ) ).x ), static_cast<float>( window1.mapPixelToCoords( sf::Mouse::getPosition( window1 ) ).y ) } );
+                }
             }
-            else if( buttonpressed = true && dtclock.getElapsedTime().asMilliseconds() > 500 && ( mousehold == false ) ){
+            else if( buttonpressed == true && dtclock.getElapsedTime().asMilliseconds() > 1000 && ( mousehold == false ) ){
                 mousehold = true;
+                //cout<<"\n\nDragPrecheck";
+                dragblock = checkhanoihover( towers, window1 );
+                //cout<<"\n\nPostcheck";
+                //cout<<"mousehold true";
             }
 
         }
-        window1.display();
+        //window1.display();
     }
     
 }
@@ -208,8 +237,32 @@ float blockwidthcomputation( int blocknum1, windowparams &param1, int totBlocks 
     //cout<<"\n\n"<<blocknum1<<endl;
     return blockwidth;
 }
-//bool checkhanoihover( std::vector<hanoiTowers> towers ){
-//    for( auto &tower : towers ){
-//        //if( tower.)
-//    }
-//}
+hanoiblock* checkhanoihover( std::vector<hanoiTowers>& towers, sf::RenderWindow &window1 ){
+    //hanoiblock 
+    hanoiblock* pointerblock = nullptr;
+    for( int i = 0; i < 3; i++ ){
+        if( towers[i].getBlocks().size() != 0 ){
+            if( checkhover( towers[i].getHanoiBlock(0).getBlock(), window1.mapPixelToCoords( sf::Mouse::getPosition( window1 ) ) ) ){
+                pointerblock = &(towers[i].getHanoiBlock(0));
+                break;
+            }
+        }
+        //else if( i == 2 ){
+        //    return nullptr;
+        //}
+    }
+    return pointerblock;
+}
+bool checkhover( sf::RectangleShape block, sf::Vector2f point ){
+    if( point.x > block.getPosition().x && point.x < ( block.getPosition().x + block.getSize().x ) ){
+        if( point.y > block.getPosition().y && point.y < ( block.getPosition().y + block.getSize().y ) ){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+    else{
+        return false;
+    }
+}
