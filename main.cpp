@@ -161,6 +161,12 @@ int main(){
     sf::Text coordinates(font1);
     coordinates.setPosition({ 5.f, 5.f });
     coordinates.setString("");
+    sf::Text winmessage( font1 );
+    winmessage.setCharacterSize(100);
+    winmessage.setString( "You Win" );
+    winmessage.Bold;
+    winmessage.setPosition( { ( param1.windowWidth / 2 - winmessage.getLocalBounds().size.x / 2 ), ( param1.windowHeight - winmessage.getLocalBounds().size.y ) / 2 } );
+    bool win11 = false;
     bool buttonpressed = false;
     bool mousehold = false;
     hanoiblock* dragblock = nullptr;
@@ -171,6 +177,11 @@ int main(){
     cout<<"Enter the number of hanoi blocks";
     cin>>totBlocks;
     param1.computeDimensions( window1, totBlocks );
+    int movecount = 0;
+    sf::Text movecount1( font1 );
+    movecount1.setCharacterSize( 10 );
+    movecount1.setPosition( { param1.windowWidth / 2 - 100, param1.towDimensions.towerBase + 20 } );
+    movecount1.setString( "Moves - " + to_string( movecount ) );
     for( int i = 0; i < 3; i++ ){
         towers.push_back( hanoiTowers( ( i + 1 ), param1 ) );
         window1.draw( towers[i].getBase() );
@@ -203,6 +214,10 @@ int main(){
                 window1.draw( block1.getBlock() );
             }
         }
+        window1.draw( movecount1 );
+        if( win11 ){
+            window1.draw( winmessage );
+        }
         window1.display();
         while( const std::optional event = window1.pollEvent() ){
             if( event -> is<sf::Event::Closed>() ){
@@ -228,6 +243,12 @@ int main(){
                             towers[ ( dragblock->getColumn() - 1 ) ].getBlocks().erase( towers[ ( dragblock->getColumn() - 1 ) ].getBlocks().begin() );
                             towers[ ( dragblock->getColumn() - 1) ].getTrack().erase( towers[ ( dragblock->getColumn() - 1 ) ].getTrack().begin() );
                             towers[i].getBlocks()[0].getBlock().setPosition( blockposition( towers[i].getBlocks()[0].getBlocknum(), i + 1, param1, totBlocks, towers[i].getBlocks().size() ) );
+                            movecount = movecount + 1;
+                            movecount1.setString( "Moves - " + to_string( movecount ) );
+                            if( i == 2 && towers[i].getBlocks().size() == totBlocks ){
+                                win11 = true;
+                                cout<<"Complete";
+                            }
                             cout<<"Blockexecuted";
                             break;
                             //checkhover1 = true;
