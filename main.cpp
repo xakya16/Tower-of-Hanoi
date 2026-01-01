@@ -9,7 +9,8 @@ class windowparams;
 struct hanoiDimensions;
 class hanoiTowers;
 class hanoiblock;
-sf::Vector2f blockposition( int blocknum, int column, windowparams &param1, int totBlocks );
+sf::Vector2f getcenterpoint( sf::RectangleShape &shape1 );
+sf::Vector2f blockposition( int blocknum, int column, windowparams &param1, int , int position1 );
 float blockwidthcomputation( int blocknum1, windowparams &param1, int totBlocks );
 hanoiblock* checkhanoihover( std::vector<hanoiTowers>& towers, sf::RenderWindow &window1 );
 bool checkhover( sf::RectangleShape block, sf::Vector2f point );
@@ -99,9 +100,9 @@ class hanoiblock{
         int blocknum;
         int column;
         sf::RectangleShape block;
-        windowparams &param1;
+        //windowparams &param1;
     public:
-        hanoiblock( const hanoiblock& block1 ) : blocknum(block1.blocknum), column( block1.column ), block( block1.block ), param1( block1.param1 ){
+        hanoiblock( const hanoiblock& block1 ) : blocknum(block1.blocknum), column( block1.column ), block( block1.block )/*, param1( block1.param1 )*/{
             //blocknum = block1.blocknum;
             //column = block1.column;
             //block = block1.block;
@@ -110,18 +111,29 @@ class hanoiblock{
             block.setSize( block1.block.getSize() );
 
         }
-        hanoiblock( int blocknum1, int totBlocks, windowparams &param11, int column1 = 1, sf::Vector2i position1 = { 0, 0 } ) : blocknum(blocknum1), column(column1), param1(param11){
-            block.setPosition( blockposition( ( totBlocks - blocknum ), column, param11, totBlocks ) );
+        hanoiblock( int blocknum1, int totBlocks, windowparams &param11, int column1 = 1, sf::Vector2i position1 = { 0, 0 } ) : blocknum(blocknum1), column(column1)/*, param1(param11)*/{
+            block.setPosition( blockposition( blocknum, column, param11, totBlocks, ( totBlocks - blocknum ) ) );
             block.setSize({ blockwidthcomputation( blocknum, param11, totBlocks ), param11.blockdimensions.blockHeight });
         }
+        //hanoiblock operator=( hanoiblock& block1 ){
+        //    return hanoiblock( block1.blocknum, )
+        //}
         void setPosition( int blocknum, int column, windowparams &param1, int totBlocks ){
-            block.setPosition( blockposition( blocknum, column, param1, totBlocks ) );
+            block.setPosition( blockposition( blocknum, column, param1, totBlocks, blocknum ) );
             this->column = column;
         }
         sf::RectangleShape& getBlock(){
             return block;
         }
-
+        int getColumn(){
+            return column;
+        }
+        void setColumn( int column1 ){
+            column = column1;
+        }
+        int getBlocknum(){
+            return blocknum;
+        }
 };
 
 int main(){
@@ -152,6 +164,7 @@ int main(){
     bool buttonpressed = false;
     bool mousehold = false;
     hanoiblock* dragblock = nullptr;
+    sf::Vector2f initPosition = { 0.f, 0.f };
     vector<hanoiTowers> towers;
     //vector<hanoiblock> blocks;
     //towers.resize(3);
@@ -183,6 +196,7 @@ int main(){
         window1.clear();
         window1.setView( view1 );
         for( int i = 0; i < 3; i++ ){
+            //window1.draw( towers[i].getTowerSprite() );
             window1.draw( towers[i].getTower() );
             window1.draw( towers[i].getBase() );
             for( auto &block1 : towers[i].getBlocks() ){
@@ -197,10 +211,40 @@ int main(){
             if( event -> is<sf::Event::MouseButtonReleased>() ){
                 buttonpressed = false;
                 dtclock.reset();
+                if( mousehold == true && dragblock != nullptr ){
+                    //bool checkhover1 = false;
+                    cout<<"\n\nExecuted\n\n";
+                    for( int i = 0; i < 3; i++ ){
+                        cout<<"Size"<<towers[i].getBlocks().size();
+                        cout<<"\n\nSprite"<<towers[i].getTowerSprite().getPosition().x<<"\t"<<towers[i].getTowerSprite().getPosition().y<<endl<<endl;
+                        cout<<"Center"<<getcenterpoint( dragblock->getBlock() ).x<<"\t"<<getcenterpoint( dragblock->getBlock() ).y;
+                        cout<<"Towerspritecheck"<<( ( towers[i].getBlocks().size() > 0 )? towers[i].getBlocks()[0].getBlocknum() : 10 )<<"Towerspritecheck < "<<dragblock->getBlocknum()<<endl;
+                        cout<<dragblock->getColumn()<<endl;
+                        cout<<"Spritesize"<<checkhover( towers[i].getTowerSprite(), getcenterpoint( dragblock->getBlock() ) );
+                        if( checkhover( towers[i].getTowerSprite(), getcenterpoint( dragblock->getBlock() ) )  && ( i != ( dragblock->getColumn() - 1 ) ) && ( ( ( towers[i].getBlocks().size() > 0 )? towers[i].getBlocks()[0].getBlocknum() : 10000 ) > dragblock->getBlocknum() ) ){
+                            towers[i].getBlocks().insert( towers[i].getBlocks().begin(), *dragblock );
+                            towers[i].getBlocks()[0].setColumn( i + 1 );
+                            towers[i].getTrack().insert( towers[i].getTrack().begin(), dragblock->getBlocknum() );
+                            towers[ ( dragblock->getColumn() - 1 ) ].getBlocks().erase( towers[ ( dragblock->getColumn() - 1 ) ].getBlocks().begin() );
+                            towers[ ( dragblock->getColumn() - 1) ].getTrack().erase( towers[ ( dragblock->getColumn() - 1 ) ].getTrack().begin() );
+                            towers[i].getBlocks()[0].getBlock().setPosition( blockposition( towers[i].getBlocks()[0].getBlocknum(), i + 1, param1, totBlocks, towers[i].getBlocks().size() ) );
+                            cout<<"Blockexecuted";
+                            break;
+                            //checkhover1 = true;
+                            //if( towers[i].getBlockTrack() > )
+                        }
+                        else if( i == 2 ){
+                            dragblock->getBlock().setPosition( initPosition );
+                        }
+                    }
+                    //if( )
+                }
+                dragblock = nullptr;
                 mousehold = false;
                 cout<<"Released";
             }
         }
+        //towers[1].getHanoiBlock(1).getBlock().
         if( sf::Mouse::isButtonPressed( sf::Mouse::Button::Left ) ){
             //sf::Mouse::setPosition( { 0, 0 } );
             if( buttonpressed == false ){
@@ -218,6 +262,9 @@ int main(){
                 mousehold = true;
                 //cout<<"\n\nDragPrecheck";
                 dragblock = checkhanoihover( towers, window1 );
+                if( dragblock != nullptr ){
+                    initPosition = dragblock->getBlock().getPosition();
+                }
                 //cout<<"\n\nPostcheck";
                 //cout<<"mousehold true";
             }
@@ -227,8 +274,8 @@ int main(){
     }
     
 }
-sf::Vector2f blockposition( int blocknum, int column, windowparams &param1, int totBlocks ){
-    sf::Vector2f temp( static_cast<float>(column * param1.hanoiDistance - ( blockwidthcomputation( ( totBlocks - blocknum ), param1, totBlocks ) / 2 ) ), static_cast<float>( param1.towDimensions.towerBase - ( blocknum ) * param1.blockdimensions.blockHeight ) );
+sf::Vector2f blockposition( int blocknum, int column, windowparams &param1, int totBlocks, int position1 ){
+    sf::Vector2f temp( static_cast<float>(column * param1.hanoiDistance - ( blockwidthcomputation( blocknum, param1, totBlocks ) / 2 ) ), static_cast<float>( param1.towDimensions.towerBase - ( position1 ) * param1.blockdimensions.blockHeight ) );
     return temp;
 
 }
@@ -265,4 +312,7 @@ bool checkhover( sf::RectangleShape block, sf::Vector2f point ){
     else{
         return false;
     }
+}
+sf::Vector2f getcenterpoint( sf::RectangleShape &shape1 ){
+    return { ( shape1.getPosition().x + shape1.getSize().x / 2 ), ( shape1.getPosition().y + shape1.getSize().y / 2 ) };
 }
